@@ -1,6 +1,6 @@
 // Configure these two values with your Supabase project credentials.
-const SUPABASE_URL = "YOUR_SUPABASE_URL";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+const SUPABASE_URL = "https://seu projeto.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_MfwAPLhE_jAkMCCnnebRLA_crKxH0EO";
 
 const supabaseReady = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_") && !SUPABASE_ANON_KEY.includes("YOUR_");
 const sb = supabaseReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
