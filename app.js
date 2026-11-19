@@ -1,5 +1,5 @@
 // Configure these two values with your Supabase project credentials.
-const SUPABASE_URL = "Your project URL is "https://ymasvaoqaakradddqrtl.supabase.co.";
+const SUPABASE_URL = "https://ymasvaoqaakradddqrtl.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_BNzVBxSEhKkVpWz5B7rIaw_Ot8sQL7Y";
 
 const supabaseReady = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_") && !SUPABASE_ANON_KEY.includes("YOUR_");
