@@ -70,18 +70,93 @@
   </div>
 
   <div class="overlay" id="auth-overlay">
-    <div class="dialog">
-      <div class="dialog-head"><h2 id="auth-title">Entrar no FMS+</h2><button class="icon-btn" data-close="auth-overlay"><i data-lucide="x"></i></button></div>
-      <form id="auth-form" class="form">
-        <label>E-mail<input type="email" id="auth-email" required autocomplete="email"></label>
-        <label>Senha<input type="password" id="auth-password" required minlength="6" autocomplete="current-password"></label>
-        <button class="btn primary full" id="auth-submit" type="submit">Entrar</button>
-        <button class="text-btn centered" type="button" id="auth-switch">Criar uma conta</button>
-        <button class="text-btn centered" type="button" id="auth-logout" hidden>Sair da conta</button>
-      </form>
-      <p class="muted small" id="auth-message"></p>
+<div class="overlay" id="auth-overlay">
+    <div class="dialog auth-dialog">
+        <div class="auth-brand">
+            <span>FMS</span><b>+</b>
+        </div>
+
+        <div class="dialog-head">
+            <h2 id="auth-title">Entrar</h2>
+            <button class="icon-btn" data-close="auth-overlay">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <p class="auth-subtitle" id="auth-subtitle">
+            Entre para continuar assistindo
+        </p>
+
+        <form id="auth-form" class="form">
+            <label>
+                E-mail
+                <input
+                    type="email"
+                    id="auth-email"
+                    placeholder="seu@email.com"
+                    autocomplete="email"
+                    required
+                >
+            </label>
+
+            <label>
+                Senha
+                <div class="password-field">
+                    <input
+                        type="password"
+                        id="auth-password"
+                        placeholder="Digite sua senha"
+                        minlength="6"
+                        autocomplete="current-password"
+                        required
+                    >
+                    <button
+                        type="button"
+                        id="password-toggle"
+                        aria-label="Mostrar senha"
+                    >
+                        <i data-lucide="eye"></i>
+                    </button>
+                </div>
+            </label>
+
+            <button
+                type="button"
+                class="text-btn auth-forgot"
+                id="auth-forgot"
+            >
+                Esqueceu sua senha?
+            </button>
+
+            <button
+                class="btn primary full auth-submit"
+                id="auth-submit"
+                type="submit"
+            >
+                Entrar
+            </button>
+
+            <button
+                class="text-btn centered"
+                type="button"
+                id="auth-switch"
+            >
+                Criar uma conta
+            </button>
+
+            <button
+                class="text-btn centered"
+                type="button"
+                id="auth-logout"
+                hidden
+            >
+                Sair da conta
+            </button>
+        </form>
+
+        <div class="auth-message" id="auth-message"></div>
     </div>
-  </div>
+</div>
 
   <div class="overlay" id="admin-overlay">
     <div class="dialog admin-dialog">
