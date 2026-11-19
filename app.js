@@ -57,28 +57,246 @@ async function loadCatalog() {
   catalog = data || [];
   renderCatalog();
 }
+// ==========================================
+// FMS+ AUTHENTICATION
+// ==========================================
+
 async function checkUser(session) {
-  currentUser = session?.user || null;
-  isAdmin = false;
-  if(currentUser && sb) {
-    const {data} = await sb.from("profiles").select("role").eq("id",currentUser.id).maybeSingle();
-    isAdmin = data?.role === "admin";
-  }
-  $("account-toggle").innerHTML = currentUser ? '<i data-lucide="user-check"></i>' : '<i data-lucide="user-round"></i>';
-  $("auth-title").textContent = currentUser ? "Sua conta" : (authMode==="signup"?"Criar conta":"Entrar no FMS+");
-  $("auth-submit").textContent = authMode==="signup"?"Criar conta":"Entrar";
-  $("auth-switch").textContent = authMode==="signup"?"Já tem uma conta? Entrar":"Criar uma conta";
-  $("auth-logout").hidden = !currentUser;
-  $("auth-message").textContent = currentUser ? `Conectado como ${currentUser.email}${isAdmin?" · Administrador":""}` : "";
-  if(isAdmin) {
-    const adminBtn = document.createElement("button");
-    adminBtn.className="btn glass";
-    adminBtn.innerHTML='<i data-lucide="shield-check"></i> FMS+ Studio';
-    adminBtn.id="admin-shortcut";
-    document.querySelector(".top-actions").appendChild(adminBtn);
-    adminBtn.onclick=()=>{openOverlay("admin-overlay");loadAdminLibrary();};
-  } else {
+    currentUser = session?.user || null;
+    isAdmin = false;
+
+    if (currentUser && sb) {
+        const { data } = await sb
+            .from("profiles")
+            .select("role")
+            .eq("id", currentUser.id)
+            .maybeSingle();
+
+        isAdmin = data?.role === "admin";
+    }
+
+    $("account-toggle").innerHTML = currentUser
+        ? '<i data-lucide="user-check"></i>'
+        : '<i data-lucide="user-round"></i>';
+
+    $("auth-title").textContent = currentUser
+        ? "Sua conta"
+        : authMode === "signup"
+            ? "Criar conta"
+            : "Entrar";
+
+    $("auth-subtitle").textContent = currentUser
+        ? "Você está conectado ao FMS+"
+        : authMode === "signup"
+            ? "Crie sua conta gratuitamente"
+            : "Entre para continuar assistindo";
+
+    $("auth-submit").textContent = authMode === "signup"
+        ? "Criar conta"
+        : "Entrar";
+
+    $("auth-switch").textContent = authMode === "signup"
+        ? "Já possui conta? Entrar"
+        : "Não possui conta? Criar conta";
+
+    $("auth-logout").hidden = !currentUser;
+
+    $("auth-message").textContent = currentUser
+        ? `Conectado como ${currentUser.email || currentUser.phone}${isAdmin ? " · Administrador" : ""}`
+        : "";
+
+    $("auth-form").hidden = !!currentUser;
+
+    // Evita duplicar o botão de administrador
     $("admin-shortcut")?.remove();
+
+    if (isAdmin) {
+        const adminBtn = document.createElement("button");
+
+        adminBtn.className = "btn glass";
+        adminBtn.innerHTML =
+            '<i data-lucide="shield-check"></i> FMS+ Studio';
+
+        adminBtn.id = "admin-shortcut";
+
+        document.querySelector(".top-actions").appendChild(adminBtn);
+
+        adminBtn.onclick = () => {
+            openOverlay("admin-overlay");
+            loadAdminLibrary();
+        };
+    }
+
+    lucide.createIcons();
+}
+
+async function initAuth() {
+    if (!sb) return;
+
+    const { data: { session } } = await sb.auth.getSession();
+
+    await checkUser(session);
+
+    sb.auth.onAuthStateChange((_event, session) => {
+        setTimeout(() => checkUser(session), 0);
+    });
+}
+
+// Abrir login
+$("account-toggle").onclick = () => {
+    authMode = "login";
+    checkUser({ user: currentUser });
+    openOverlay("auth-overlay");
+};
+
+$("nav-account").onclick = () => {
+    authMode = "login";
+    checkUser({ user: currentUser });
+    openOverlay("auth-overlay");
+};
+
+// Alternar entre login e cadastro
+$("auth-switch").onclick = () => {
+    authMode = authMode === "login" ? "signup" : "login";
+
+    $("auth-password").value = "";
+    $("auth-message").textContent = "";
+
+    checkUser({ user: currentUser });
+};
+
+// Mostrar e ocultar senha
+$("password-toggle").onclick = () => {
+    const password = $("auth-password");
+
+    const showing = password.type === "password";
+
+    password.type = showing ? "text" : "password";
+
+    $("password-toggle").innerHTML = showing
+        ? '<i data-lucide="eye-off"></i>'
+        : '<i data-lucide="eye"></i>';
+
+    lucide.createIcons();
+};
+
+// Login e cadastro
+$("auth-form").onsubmit = async e => {
+    e.preventDefault();
+
+    if (!sb) {
+        $("auth-message").textContent =
+            "O sistema de autenticação está indisponível.";
+
+        return;
+    }
+
+    const email = $("auth-email").value.trim();
+    const password = $("auth-password").value;
+
+    const submit = $("auth-submit");
+    const message = $("auth-message");
+
+    submit.disabled = true;
+    submit.textContent = "Aguarde...";
+    message.textContent = "";
+    message.className = "auth-message";
+
+    try {
+        let result;
+
+        if (authMode === "signup") {
+            result = await sb.auth.signUp({
+                email,
+                password
+            });
+        } else {
+            result = await sb.auth.signInWithPassword({
+                email,
+                password
+            });
+        }
+
+        if (result.error) {
+            throw result.error;
+        }
+
+        if (authMode === "signup") {
+            message.className = "auth-message success";
+            message.textContent =
+                "Conta criada! Verifique seu e-mail para confirmar o cadastro.";
+
+            $("auth-password").value = "";
+        } else {
+            message.className = "auth-message success";
+            message.textContent = "Login realizado com sucesso!";
+
+            closeOverlay("auth-overlay");
+        }
+
+    } catch (error) {
+        message.className = "auth-message error";
+
+        if (error.message.includes("Invalid login credentials")) {
+            message.textContent = "E-mail ou senha incorretos.";
+        } else if (error.message.includes("already registered")) {
+            message.textContent = "Este e-mail já possui uma conta.";
+        } else if (error.message.includes("Password")) {
+            message.textContent = "A senha deve ter pelo menos 6 caracteres.";
+        } else {
+            message.textContent = error.message;
+        }
+
+    } finally {
+        submit.disabled = false;
+
+        submit.textContent = authMode === "signup"
+            ? "Criar conta"
+            : "Entrar";
+    }
+};
+
+// Recuperação de senha
+$("auth-forgot").onclick = async () => {
+    if (!sb) return;
+
+    const email = $("auth-email").value.trim();
+
+    if (!email) {
+        $("auth-message").textContent =
+            "Digite seu e-mail primeiro.";
+
+        $("auth-email").focus();
+
+        return;
+    }
+
+    $("auth-message").textContent = "Enviando solicitação...";
+    $("auth-message").className = "auth-message";
+
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: "https://fms-plus.netlify.app"
+    });
+
+    if (error) {
+        $("auth-message").textContent = error.message;
+        $("auth-message").className = "auth-message error";
+    } else {
+        $("auth-message").textContent =
+            "Se o e-mail estiver cadastrado, você receberá um link para redefinir sua senha.";
+
+        $("auth-message").className = "auth-message success";
+    }
+};
+
+// Sair da conta
+$("auth-logout").onclick = async () => {
+    if (sb) {
+        await sb.auth.signOut();
+    }
+
+    closeOverlay("auth-overlay");
+};
   }
   lucide.createIcons();
 }
